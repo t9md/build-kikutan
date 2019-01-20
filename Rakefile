@@ -22,9 +22,9 @@ def say(text, options)
   client.synthesize_speech synthesis_input, options, audio_config
 end
 
-# out/svl/mix/en_ja_en--svl-01.mp3
-# out/svl/mp3/en_ja_en--svl-01.mp3
-# out/svl/compile/en_ja_en--svl-01.wav
+# out/svl/mix/svl-en_ja_en--svl-01.mp3
+# out/svl/mp3/svl-en_ja_en--svl-01.mp3
+# out/svl/compile/svl-en_ja_en--svl-01.wav
 # out/svl/concat/en_ja_en--svl-01--0001.wav
 # out/svl/concat/en_ja_en--svl-01--0002.wav
 # out/svl/raw/svl-01--0001-en-ca978112...ee48bb.wav
@@ -38,9 +38,9 @@ def file_for(kind, opts)
   basename = opts[:basename]
   case kind
   when :mix, :mp3 then
-    "#{dir}/#{rule_name}--#{basename}.mp3"
+    "#{dir}/#{project}-#{rule_name}--#{basename}.mp3"
   when :compile
-    "#{dir}/#{rule_name}--#{basename}.wav"
+    "#{dir}/#{project}-#{rule_name}--#{basename}.wav"
   when :concat
     "#{dir}/#{rule_name}--#{basename}--#{opts[:lineno]}.wav"
   when :raw
