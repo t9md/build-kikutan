@@ -4,3 +4,4 @@ out/**
 src/**
 work/**
 !.gitkeep
+.gitignore
