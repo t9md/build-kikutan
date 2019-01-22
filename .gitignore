@@ -1,5 +1,10 @@
 **/*.mp3
 **/*.wav
+**/out/**
+**/raw/**
 out/**
+raw/**
 work/**
+src/sil
+src/svl
 !.gitkeep

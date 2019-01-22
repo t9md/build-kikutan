@@ -1,0 +1,6 @@
+Hello	こんにちわ
+World	世界
+apple	りんご
+live	住む
+along	〜に沿って
+sesame	ゴマ、ゴマの実
