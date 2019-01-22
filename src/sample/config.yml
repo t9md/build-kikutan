@@ -4,21 +4,22 @@ project: sample # プロジェクト名
 field: # タブ区切りのフィールドに名前をつけ、使用する音声名を指定
   en: en-US-Wavenet-F # １つ目のフィールドは英語の音声
   ja: ja-JP-Wavenet-A # ２つ目は日本語として読み上げ
-concat: # １行の各フィールドを合成するルールを指定
+concat: # 各行の各フィールドを結合するルールを指定
   en_ja: [en, 1.0, ja, 1.0] # 英語-無音1秒-日本語-無音1秒 で結合
-  ja_en: [ja, 1.0, en, 1.0] # 日本語-無音1秒-英語-無音1秒 で結合
-compile: # 全行を結合(compile)する時、en_ja はシャッフルして結合
-  ja_en: shuffle
-filter: # Google に送る前にテキストを加工するための filter を指定
-  ja: normalize_japanese # 日本語のテキストの"〜"を"なになに"に書き換える等
-mix:
-  ja_en: piano2keikai-v0.1.mp3
-album: # アルバム名やジャケット画像を指定
-  en_ja:
-    artist: YOUR_NAME
-    title: sample-en_ja
-    jacket: sample-en_ja.png
-  ja_en:
-    artist: YOUR_NAME
-    title: sample-ja_en
-    jacket: sample-ja_en.png
+#   ja_en: [ja, 1.0, en, 1.0] # 日本語-無音1秒-英語-無音1秒 で結合
+# compile: # 各行の音声をまとめる(compile)する時、en_ja はシャッフルして結合
+#   ja_en: shuffle # 今の所 shuffle のみ可
+# filter: # Google に送る前にテキストを加工するための filter を指定
+#   ja: normalize_japanese # 日本語のテキストの"〜"を"なになに"に書き換える等
+# mix:
+#   en_ja: piano2keikai-v0.1.mp3 # mix する音楽。このファイルからの相対パス
+#   ja_en: piano2keikai-v0.1.mp3
+# album: # アルバム名やジャケット画像を指定
+#   en_ja:
+#     artist: YOUR_NAME
+#     title: sample-en_ja
+#     jacket: sample-en_ja.png  # アルバムジャケット用画像。このファイルからの相対パス
+#   ja_en:
+#     artist: YOUR_NAME
+#     title: sample-ja_en
+#     jacket: sample-ja_en.png
