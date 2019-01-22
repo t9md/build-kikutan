@@ -1,6 +1,6 @@
 # dir_out: ./out # 出力ディレクトリ. この設定ファイルからの相対パス or 絶対パスで指定. デフォルトは "./out"
 # dir_raw: ./raw # raw だけは別ディレクトリに個別に設定できる。デフォルトは "./raw"
-project: en-easy # プロジェクト名
+project: sample # プロジェクト名
 field: # タブ区切りのフィールドに名前をつけ、使用する音声名を指定
   en: en-US-Wavenet-F # １つ目のフィールドは英語の音声
   ja: ja-JP-Wavenet-A # ２つ目は日本語として読み上げ
@@ -16,9 +16,9 @@ mix:
 album: # アルバム名やジャケット画像を指定
   en_ja:
     artist: YOUR_NAME
-    title: en-easy-en_ja
-    jacket: en-easy-en_ja.png
+    title: sample-en_ja
+    jacket: sample-en_ja.png
   ja_en:
     artist: YOUR_NAME
-    title: en-easy-ja_en
-    jacket: en-easy-ja_en.png
+    title: sample-ja_en
+    jacket: sample-ja_en.png

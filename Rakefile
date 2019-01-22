@@ -156,7 +156,7 @@ def define_task(filelist, rule_name)
     # album
     #----------------
     desc "album"
-    task "album": filelist[:mp3] do |t|
+    task album: filelist[:mp3] do |t|
       options = []
       artist = CONF['album'][rule_name]['artist']
       options << "-a #{artist}" if artist
@@ -170,7 +170,7 @@ def define_task(filelist, rule_name)
 
     namespace :album do
       desc "play"
-      task play: "mp3:play"
+      task play: [:album, "mp3:play"]
     end
 
     # mp3
