@@ -1,10 +1,8 @@
-**/*.mp3
-**/*.wav
+work/**
+src/**
+!src/sample
 **/out/**
 **/raw/**
-out/**
-raw/**
-work/**
-src/sil
-src/svl
-!.gitkeep
+**/.DS_Store
+**/*.mp3
+**/*.wav
