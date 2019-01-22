@@ -35,10 +35,8 @@ def say(voice, content)
   result.audio_content
 end
 
-
 task :noop
 task default: :noop
-
 
 # out/svl/mix/svl-en_ja_en--svl-01.mp3
 # out/svl/mp3/svl-en_ja_en--svl-01.mp3
@@ -75,35 +73,7 @@ def build_filelist(source_file, rule_name)
     line.chomp!
 
     raw_by_field = {}
-
     line.split(/\t/).each_with_index do |content, index|
-      field, voice = fields[index]
-      next unless voice
-      filter = CONFIG['filter'][field]
-      content = Filter.send(filter, content) if filter
-
-      digest = Digest::SHA256.hexdigest(voice + content)
-      raw_file = "#{DIR[:raw]}/#{digest}.wav"
-      filelist[:say_args_by_raw][raw_file] = [voice, content]
-      raw_by_field[field] = raw_file
-    end
-    filelist[:raw] << raw_by_field
-  end
-  filelist
-end
-
-def get_raw_filelist(source_file)
-  filelist = {
-    args_by_raw: {},
-    raw_by_index: [],
-  }
-  fields = CONFIG['fields'].to_a
-
-  src_lines = File.readlines(source_file)
-  src_lines.each_with_index do |line, index|
-    raw_by_field = {}
-
-    line.chomp.split(/\t/).each_with_index do |content, index|
       field, voice = fields[index]
       next unless voice
       filter = CONFIG['filter'][field]
@@ -259,63 +229,26 @@ def define_task(filelist, rule_name)
   end
 end
 
-all_files = {
-  mp3: [],
-  mix: [],
-  compile: [],
-  concat: [],
-  silent: [],
-  raw: [],
-  say_args_by_raw: {},
-}
+say_args_by_raw = {}
 
 CONFIG['concat'].keys.each do |rule_name|
   filelist = build_filelist(ENV['src'], rule_name)
-  all_files[:mp3] << filelist[:mp3]
-  all_files[:mix] << filelist[:mix]
-  all_files[:compile] << filelist[:compile]
-  all_files[:concat].concat(filelist[:concat])
-  all_files[:raw].concat(filelist[:say_args_by_raw].keys)
-  all_files[:say_args_by_raw].merge!(filelist[:say_args_by_raw])
-
+  say_args_by_raw.merge!(filelist[:say_args_by_raw])
   define_task(filelist, rule_name)
 end
 
-all_files[:raw].uniq!
-
 # silent
 #----------------
-def get_silent_filelist()
-  filelist = {}
-  numbers = CONFIG['concat'].values().flatten.uniq.select { |e| e.is_a?(Numeric) }
-  numbers.each do |duration|
-    silent = "#{DIR[:silent]}/#{duration}.wav"
-    filelist[duration] = silent
-    mkdir_p DIR[:silent], verbose: false
-    file silent do |t|
-      sh "sox -n #{t.name} trim 0 #{duration} rate 24000"
-    end
-  end
-  filelist
+rule %r{#{ROOT}/silent/.*.wav} do |t|
+  mkdir_p DIR[:silent], verbose: false
+  # Silent flename is just duration.  ex) out/svl/silent/1.0.wav
+  duration = t.name.pathmap('%n')
+  sh "sox -n #{t.name} trim 0 #{duration} rate 24000"
 end
-$filelist_silent = get_silent_filelist()
-
-desc "concat"
-task :concat, :rule_name do |t, args|
-  p args.rule_name
-end
-
-
-# rule %r{#{ROOT}/silent/.*.wav} do |t|
-#   mkdir_p DIR[:silent], verbose: false
-#   # Silent flename is just duration.  ex) out/svl/silent/1.0.wav
-#   duration = t.name.pathmap('%n')
-#   sh "sox -n #{t.name} trim 0 #{duration} rate 24000"
-# end
 
 # raw
 #----------------
-all_files[:say_args_by_raw].each do |raw_file, say_args|
+say_args_by_raw.each do |raw_file, say_args|
   file raw_file do
     mkdir_p DIR[:raw], verbose: false
     File.write(raw_file, say(*say_args), mode: "wb")
@@ -324,16 +257,6 @@ all_files[:say_args_by_raw].each do |raw_file, say_args|
 end
 
 namespace :clean do
-  # extname = File.extname(ENV['src'])
-  # basename = File.basename(ENV['src'], extname)
-
-  # desc "raw_unused"
-  # task :raw_unused do
-  #   actual = Dir.glob("#{DIR[:raw]}/#{basename}--*")
-  #   unused = actual - all_files[:raw]
-  #   rm unused, verbose: true unless unused.empty?
-  # end
-
   desc "except_raw"
   task :except_raw do
     rm_rf DIR[:mix]
