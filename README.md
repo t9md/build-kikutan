@@ -37,7 +37,7 @@
 
 "キクタン"シリーズの様な単語学習アルバムを自力で作成することが出来るツール。  
 
-[このツールで生成したじぶんキクタン](imgs/sample-en_ja--words-1.mp3)
+[このツールで生成したじぶんキクタン@SoundCloud](https://soundcloud.com/t9md/sample-en-ja-words-1)
 
 以下の様な テキストがあるとします。
 
