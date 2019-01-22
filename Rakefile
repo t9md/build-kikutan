@@ -7,9 +7,21 @@ require "google/cloud/text_to_speech"
 # Quilck Reference for Rakefile:
 # https://gist.github.com/noonat/1649543
 
+CONFIG_DIR = File.dirname(File.expand_path(ENV["conf"]))
+CONFIG = YAML.load_file(ENV["conf"])
+ROOT = "out/#{CONFIG["project"]}"
+DIR = {
+  raw: "#{ROOT}/raw",
+  silent: "#{ROOT}/silent",
+  concat: "#{ROOT}/concat",
+  compile: "#{ROOT}/compile",
+  mp3: "#{ROOT}/mp3",
+  mix: "#{ROOT}/mix",
+}
+
 def load_filter
-  Dir.glob("filter/*.rb") do |filename|
-    load(filename)
+  Dir.glob("filter/*.rb") do |filter|
+    load(filter)
   end
 end
 load_filter
@@ -23,6 +35,11 @@ def say(voice, content)
   result.audio_content
 end
 
+
+task :noop
+task default: :noop
+
+
 # out/svl/mix/svl-en_ja_en--svl-01.mp3
 # out/svl/mp3/svl-en_ja_en--svl-01.mp3
 # out/svl/compile/svl-en_ja_en--svl-01.wav
@@ -32,32 +49,17 @@ end
 # out/svl/raw/09e62852...3e05ef.wav
 # out/svl/raw/b0ad6bc1...b11365.wav
 # out/svl/raw/f47a89d2...a2ceb7.wav
-
-task :noop
-task default: :noop
-
-CONFIG_DIR = File.dirname(File.expand_path(ENV["conf"]))
-CONFIG = YAML.load_file(ENV["conf"])
-ROOT = "out/#{CONFIG["project"]}"
-DIR = {
-  raw: "#{ROOT}/raw",
-  silent: "#{ROOT}/silent",
-  concat: "#{ROOT}/concat",
-  compile: "#{ROOT}/compile",
-  mp3: "#{ROOT}/mp3",
-  mix: "#{ROOT}/mix",
-}
-
 def build_filelist(source_file, rule_name)
   basename = source_file.pathmap('%n') # base name without ext
   prefix = "#{CONFIG["project"]}-#{rule_name}--#{basename}"
+  src_lines = File.readlines(source_file)
 
   filelist = {
     source: source_file,
     mix: "#{DIR[:mix]}/#{prefix}.mp3",
     mp3: "#{DIR[:mp3]}/#{prefix}.mp3",
     compile: "#{DIR[:compile]}/#{prefix}.wav",
-    concat: [],
+    concat: 1.upto(src_lines.size).map { |n| "#{DIR[:concat]}/#{prefix}--#{'%04d' % n}.wav" },
     raw: [],
     say_args_by_raw: {},
     silent_by_duration: {}
@@ -68,14 +70,40 @@ def build_filelist(source_file, rule_name)
     filelist[:silent_by_duration][duration] = "#{DIR[:silent]}/#{duration}.wav"
   end
 
-  File.readlines(source_file).each_with_index do |line, index|
+  fields = CONFIG['fields'].to_a
+  src_lines.each_with_index do |line, index|
     line.chomp!
 
-    filelist[:concat] << "#{DIR[:concat]}/#{prefix}--#{'%04d' % (index + 1)}.wav"
-    fields = CONFIG['fields'].to_a
     raw_by_field = {}
 
     line.split(/\t/).each_with_index do |content, index|
+      field, voice = fields[index]
+      next unless voice
+      filter = CONFIG['filter'][field]
+      content = Filter.send(filter, content) if filter
+
+      digest = Digest::SHA256.hexdigest(voice + content)
+      raw_file = "#{DIR[:raw]}/#{digest}.wav"
+      filelist[:say_args_by_raw][raw_file] = [voice, content]
+      raw_by_field[field] = raw_file
+    end
+    filelist[:raw] << raw_by_field
+  end
+  filelist
+end
+
+def get_raw_filelist(source_file)
+  filelist = {
+    args_by_raw: {},
+    raw_by_index: [],
+  }
+  fields = CONFIG['fields'].to_a
+
+  src_lines = File.readlines(source_file)
+  src_lines.each_with_index do |line, index|
+    raw_by_field = {}
+
+    line.chomp.split(/\t/).each_with_index do |content, index|
       field, voice = fields[index]
       next unless voice
       filter = CONFIG['filter'][field]
@@ -257,12 +285,33 @@ all_files[:raw].uniq!
 
 # silent
 #----------------
-rule %r{#{ROOT}/silent/.*} do |t|
-  mkdir_p DIR[:silent], verbose: false
-  # Silent flename is just duration.  ex) out/svl/silent/1.0.wav
-  duration = t.name.pathmap('%n')
-  sh "sox -n #{t.name} trim 0 #{duration} rate 24000"
+def get_silent_filelist()
+  filelist = {}
+  numbers = CONFIG['concat'].values().flatten.uniq.select { |e| e.is_a?(Numeric) }
+  numbers.each do |duration|
+    silent = "#{DIR[:silent]}/#{duration}.wav"
+    filelist[duration] = silent
+    mkdir_p DIR[:silent], verbose: false
+    file silent do |t|
+      sh "sox -n #{t.name} trim 0 #{duration} rate 24000"
+    end
+  end
+  filelist
 end
+$filelist_silent = get_silent_filelist()
+
+desc "concat"
+task :concat, :rule_name do |t, args|
+  p args.rule_name
+end
+
+
+# rule %r{#{ROOT}/silent/.*.wav} do |t|
+#   mkdir_p DIR[:silent], verbose: false
+#   # Silent flename is just duration.  ex) out/svl/silent/1.0.wav
+#   duration = t.name.pathmap('%n')
+#   sh "sox -n #{t.name} trim 0 #{duration} rate 24000"
+# end
 
 # raw
 #----------------
@@ -275,15 +324,15 @@ all_files[:say_args_by_raw].each do |raw_file, say_args|
 end
 
 namespace :clean do
-  extname = File.extname(ENV['src'])
-  basename = File.basename(ENV['src'], extname)
+  # extname = File.extname(ENV['src'])
+  # basename = File.basename(ENV['src'], extname)
 
-  desc "raw_unused"
-  task :raw_unused do
-    actual = Dir.glob("#{DIR[:raw]}/#{basename}--*")
-    unused = actual - all_files[:raw]
-    rm unused, verbose: true unless unused.empty?
-  end
+  # desc "raw_unused"
+  # task :raw_unused do
+  #   actual = Dir.glob("#{DIR[:raw]}/#{basename}--*")
+  #   unused = actual - all_files[:raw]
+  #   rm unused, verbose: true unless unused.empty?
+  # end
 
   desc "except_raw"
   task :except_raw do
