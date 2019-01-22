@@ -37,11 +37,7 @@
 
 "キクタン"シリーズの様な単語学習アルバムを自力で作成することが出来るツール。  
 
-<audio controls>
-<source src=imgs/sample-en_ja--words-1.mp3>
-</audio>
-
-<!-- <audio src="imgs/sample-en_ja--words-1.mp3">このツールで生成したじぶんキクタン</audio> -->
+<a src="imgs/sample-en_ja--words-1.mp3">このツールで生成したじぶんキクタン</a>
 
 以下の様な テキストがあるとします。
 
