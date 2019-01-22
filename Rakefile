@@ -29,6 +29,7 @@ DEFAULT_CONFIG = {
   'dir_out' => './out',
   'dir_raw' => './raw',
   'compile' => {},
+  'album' => {},
   'filter' => {},
   'mix' => {},
 }
@@ -157,15 +158,20 @@ def define_task(filelist, rule_name)
     #----------------
     desc "album"
     task album: filelist[:mp3] do |t|
-      options = []
-      artist = CONF['album'][rule_name]['artist']
-      options << "-a #{artist}" if artist
-      title = CONF['album'][rule_name]['title']
-      options << "-A #{title}" if title
-      jacket = CONF['album'][rule_name]['jacket']
-      options << "--add-image #{File.absolute_path(jacket, CONF_DIR)}:FRONT_COVER" if jacket
-      lyrics = filelist[:source]
-      sh "eyeD3 -Q #{options.join(' ')} --add-lyrics #{lyrics} #{t.source}"
+      album_config = CONF['album'][rule_name]
+      if album_config
+        options = []
+        artist = album_config['artist']
+        options << "-a #{artist}" if artist
+        title = album_config['title']
+        options << "-A #{title}" if title
+        jacket = album_config['jacket']
+        options << "--add-image #{File.absolute_path(jacket, CONF_DIR)}:FRONT_COVER" if jacket
+        lyrics = filelist[:source]
+        unless options.empty?
+          sh "eyeD3 -Q #{options.join(' ')} --add-lyrics #{lyrics} #{t.source}"
+        end
+      end
     end
 
     namespace :album do
@@ -180,7 +186,7 @@ def define_task(filelist, rule_name)
       mp3 = t.name
       tmp_mp3 = t.name + "tmp.mp3" # ".mp3" extension is significant for ffmpeg to know the type of music, keep it.
 
-      sh "ffmpeg -loglevel quiet -i #{t.source} -vn -ac 2 -ar 44100 -ab 256k -acodec libmp3lame -f mp3 #{mp3}"
+      sh "ffmpeg -y -loglevel quiet -i #{t.source} -vn -ac 2 -ar 44100 -ab 256k -acodec libmp3lame -f mp3 #{mp3}"
 
       mix = ENV['mix']
       if not mix and CONF['mix'][rule_name]
@@ -189,7 +195,7 @@ def define_task(filelist, rule_name)
 
       if mix
         duration=`soxi #{mp3} | grep Duration | awk '{ print $3 }'`.chomp
-        sh "sox #{mp3} -m #{mix} #{tmp_mp3} trim 00:00.00 #{duration} fade 0 -0 6"
+        sh "sox --clobber #{mp3} -m #{mix} #{tmp_mp3} trim 00:00.00 #{duration} fade 0 -0 6"
         mv tmp_mp3, mp3, verbose: true
       end
     end
@@ -212,7 +218,7 @@ def define_task(filelist, rule_name)
       if CONF['compile'][rule_name] === "shuffle"
         files = files.shuffle
       end
-      sh "sox #{files.join(" ")} #{t.name} pad 0 7" # pad with 7s silence at end.
+      sh "sox --clobber #{files.join(" ")} #{t.name} pad 0 7" # pad with 7s silence at end.
     end
 
     desc "compile"
