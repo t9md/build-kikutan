@@ -86,6 +86,18 @@ brew install sox
 pip install eyeD3
 ```
 
+- `google-cloud-text_to_speech` の gem (Ruby のライブラリ)
+
+```
+$ gem install google-cloud-text_to_speech
+```
+
+↑ が入らなければ ↓ を try
+
+```
+$ sudo gem install google-cloud-text_to_speech
+```
+
 ## Google TTSを使えるようにする
 
 - Google Cloud のアカウント作成とTTSのAPIの有効化。API key をどこかに保存
