@@ -236,6 +236,13 @@ def define_task(filelist, rule_name)
     filelist[:concat].each_with_index do |concat_file, index|
       raw_file_by_field = filelist[:raw][index]
 
+      # Inject tempo-ed file as dependency
+      CONF['concat'][rule_name].each do |field|
+        if (field =~ /(.*)(-[0-9\.]+x)$/)
+          raw_file_by_field[field] = raw_file_by_field[$1].pathmap('%X') + $2 + '.wav'
+        end
+      end
+
       depends = raw_file_by_field.values + filelist[:silent_by_duration].values()
       file concat_file => depends do |t|
         mkdir_p DIR[:concat], verbose: false
@@ -288,6 +295,14 @@ rule %r{#{OUT}/silent/.*.wav} do |t|
   # Silent flename is just duration.  ex) out/svl/silent/1.0.wav
   duration = t.name.pathmap('%n')
   sh "sox -n #{t.name} trim 0 #{duration} rate 24000"
+end
+
+# abnormal tempo
+#----------------
+rule %r{#{DIR[:raw]}/.*-[0-9\.]+x\.wav} => proc { |tn| tn.sub(/-[0-9\.]+x\.wav$/, ".wav") } do |t|
+  t.name =~ /.*-([0-9\.]+)x\.wav$/
+  tempo = $1
+  sh "sox #{t.source} #{t.name} tempo #{tempo}"
 end
 
 # raw
