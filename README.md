@@ -38,6 +38,7 @@
 "キクタン"シリーズの様な単語学習アルバムを自力で作成することが出来るツール。  
 
 [このツールで生成したじぶんキクタン@SoundCloud](https://soundcloud.com/t9md/sample-en-ja-words-1)
+また [t9md/cram-vocabulary](https://github.com/t9md/cram-vocabulary) と組み合わせることで、movie も生成可能。
 
 以下の様な テキストがあるとします。
 
