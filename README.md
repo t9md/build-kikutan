@@ -563,8 +563,9 @@ M = movie
 | [!M] movie_pics:   2.3GB: 2.3MB x 1000 out/movie_pics:                          |
 | [ M] mp4           672MB:              out/movie                                |
 +---------------------------------------------------------------------------------+
-Total-A: Keep   ! files:  S=1GB,   C=3.5GB, M=2.9GB
-Total-B: Delete ! files:  S=307MB, C=3.5GB, M=672MB
+
+Total-A: Keep   ! files:  S=1GB,   C=3.5GB, M=2.9GB: S+C+M = 7.4GB
+Total-B: Delete ! files:  S=307MB, C=3.5GB, M=672MB: S+C+M = 4.5GB
 ```
 
 # 謝辞
