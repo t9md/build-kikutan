@@ -158,7 +158,8 @@ def define_task(filelist, rule_name)
           mkdir_p DIR[:movie_pics]
           app_entry = CONF['movie'][rule_name]['app_entry']
           script = "scripts/capture_movie_pics.py"
-          source_path = File.expand_path(filelist[:source])
+          movie_src = ENV['movie_src'] || ENV['src']
+          source_path = File.expand_path(movie_src)
           sh "python #{script} -e #{app_entry} #{source_path} -d #{DIR[:movie_pics]}", noop: false, verbose: true
         end
       end

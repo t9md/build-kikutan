@@ -28,6 +28,7 @@
   - [音声ファイルのサイズが大きいんですが。。もうちょっと小さくなりませんか？](#音声ファイルのサイズが大きいんですがもうちょっと小さくなりませんか)
   - [Movie も生成できる？](#movie-も生成できる)
   - [Movie はどうやったら生成できる？](#movie-はどうやったら生成できる)
+  - [Movie 用と音声用で、src ファイルが若干ちがうのですが。。](#movie-用と音声用でsrc-ファイルが若干ちがうのですが)
 - [謝辞](#謝辞)
 
 <!-- TOC END -->
@@ -520,8 +521,20 @@ Google Cloud のコンソールから使用量と課金状況は確認できる�
 まずは、[t9md/cram-vocabulary](https://github.com/t9md/cram-vocabulary) をセットアップし、音声化した同じ単語リストを、このアプリ上で学べるようにして下さい。  
 次に、`sample/config.yml` の movie 設定を参考に、app_entry を指定した後、`rule_name:movie` タスクを実行します。`out/movie/` 配下に mp4 が生成されます。  
 
-```sh
+```shell
 rake conf=src/svl/config.yml src=src/svl/svl-99.txt en_ja_en:movie
+```
+
+## Movie 用と音声用で、src ファイルが若干ちがうのですが。。
+
+わかります。音声読み上げ時には主要な意味のみを読み上げさせるため、テキストを加工して音声化したが、動画には全ての意味を含めたい、などでしょう。  
+音声化をが終わった後ファイルを rename して、上書きすることでも対応できますが、`movie_src` を渡してやることで対応可能です。  
+この場合でも `src` は生成された音声ファイルの場所を特定するためにも渡さなければなりません。  
+また、当然ながら `src` と `movie_src` の単語の並び順は同じである必要があります。  
+Movie は 2フィールドしか対応していない、と書きましたが、 `movie_src` に渡すファイルを２，３フィールドをつなげて、 2フィールドにしてしまえば、実質３フィールドの movie 化も可能です。各自工夫して下さい。
+
+```shell
+rake conf=src/svl/config.yml src=src/svl/svl-99.txt movie_src=src/svl/svl-99-full.txt en_ja_en:movie
 ```
 
 # 謝辞
