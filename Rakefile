@@ -7,6 +7,11 @@ require "google/cloud/text_to_speech"
 # Quilck Reference for Rakefile:
 # https://gist.github.com/noonat/1649543
 
+def check_duration(file)
+  duration = `soxi #{file} | grep Duration | awk '{ print $3 }'`.chomp
+  duration
+end
+
 def validate_env_and_file(key)
   if ENV[key] and File.exist?(ENV[key])
     return
@@ -30,6 +35,7 @@ DEFAULT_CONFIG = {
   'dir_raw' => './raw',
   'compile' => {},
   'album' => {},
+  'movie' => {},
   'filter' => {},
   'mix' => {},
 }
@@ -42,6 +48,8 @@ DIR = {
   concat: "#{OUT}/concat",
   compile: "#{OUT}/compile",
   mp3: "#{OUT}/mp3",
+  movie_pics: "#{OUT}/movie_pics",
+  movie: "#{OUT}/movie",
 }
 
 def load_filter
@@ -103,7 +111,10 @@ def build_filelist(source_file, rule_name)
     concat: 1.upto(src_lines.size).map { |n| "#{DIR[:concat]}/#{prefix}--#{'%04d' % n}.wav" },
     raw: [],
     say_args_by_raw: {},
-    silent_by_duration: {}
+    silent_by_duration: {},
+    movie_concat: "#{DIR[:movie]}/CONCAT_#{prefix}.txt",
+    movie: "#{DIR[:movie]}/#{prefix}.mp4",
+    movie_pics: [],
   }
 
   required_fields = CONF['concat'][rule_name].uniq
@@ -112,13 +123,16 @@ def build_filelist(source_file, rule_name)
   end
 
   field_voice = CONF['field'].to_a
-  src_lines.each_with_index do |line, index|
+  src_lines.each_with_index do |line, line_num|
     line.chomp!
 
     raw_by_field = {}
     line.split(/\t/).each_with_index do |content, index|
       field, voice = field_voice[index]
       next unless voice
+      if (filelist[:movie_pics][line_num].nil?)
+        filelist[:movie_pics].push "#{DIR[:movie_pics]}/#{content}.png"
+      end
       filter = CONF['filter'][field]
       content = Filter.send(filter, content) if filter
       digest = Digest::SHA256.hexdigest(voice + content)
@@ -138,7 +152,48 @@ def define_task(filelist, rule_name)
       pp filelist
     end
 
-    desc "itunes"
+    if CONF['movie'][rule_name]
+      filelist[:movie_pics].each do |pic|
+        file pic do
+          mkdir_p DIR[:movie_pics]
+          app_entry = CONF['movie'][rule_name]['app_entry']
+          script = "scripts/capture_movie_pics.py"
+          source_path = File.expand_path(filelist[:source])
+          sh "python #{script} -e #{app_entry} #{source_path} -d #{DIR[:movie_pics]}", noop: false, verbose: true
+        end
+      end
+
+      file filelist[:movie_concat] => filelist[:movie_pics] + filelist[:concat] do |t|
+        concat_list = []
+        filelist[:movie_pics].zip(filelist[:concat]).each do |word, sound|
+          concat_list.push "file #{word}"
+          concat_list.push "duration #{check_duration(sound)}"
+        end
+        File.write(filelist[:movie_concat], concat_list.join("\n") + "\n")
+      end
+
+      file filelist[:movie] => filelist[:movie_concat] do |t|
+        mkdir_p DIR[:movie]
+
+        sound = filelist[:mp3]
+        concat_file = filelist[:movie_concat]
+        movie = filelist[:movie]
+
+        cmd = "ffmpeg -y -safe 0 -f concat -i #{concat_file} -i #{sound} -c:v libx264 -tune stillimage -c:a aac -b:a 192k -pix_fmt yuv420p #{movie}"
+        sh cmd, verbose: true
+      end
+
+      desc "movie"
+      task movie: filelist[:movie]
+
+      namespace :movie do
+        desc "play"
+        task play: filelist[:movie] do |t|
+          sh "open #{t.source}"
+        end
+      end
+    end
+
     task itunes: [:album] do
       artist = CONF['album'][rule_name]['artist']
       title = CONF['album'][rule_name]['title']
@@ -194,7 +249,7 @@ def define_task(filelist, rule_name)
       end
 
       if mix
-        duration=`soxi #{mp3} | grep Duration | awk '{ print $3 }'`.chomp
+        duration = check_duration(mp3)
         sh "sox --clobber #{mp3} -m #{mix} #{tmp_mp3} trim 00:00.00 #{duration} fade 0 -0 6"
         mv tmp_mp3, mp3, verbose: true
       end
