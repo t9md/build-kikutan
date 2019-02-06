@@ -29,6 +29,7 @@
   - [Movie も生成できる？](#movie-も生成できる)
   - [Movie はどうやったら生成できる？](#movie-はどうやったら生成できる)
   - [Movie 用と音声用で、src ファイルが若干ちがうのですが。。](#movie-用と音声用でsrc-ファイルが若干ちがうのですが)
+  - [ディスク容量はどれくらい必要ですか？](#ディスク容量はどれくらい必要ですか)
 - [謝辞](#謝辞)
 
 <!-- TOC END -->
@@ -531,10 +532,39 @@ rake conf=src/svl/config.yml src=src/svl/svl-99.txt en_ja_en:movie
 音声化をが終わった後ファイルを rename して、上書きすることでも対応できますが、`movie_src` を渡してやることで対応可能です。  
 この場合でも `src` は生成された音声ファイルの場所を特定するためにも渡さなければなりません。  
 また、当然ながら `src` と `movie_src` の単語の並び順は同じである必要があります。  
-Movie は 2フィールドしか対応していない、と書きましたが、 `movie_src` に渡すファイルを２，３フィールドをつなげて、 2フィールドにしてしまえば、実質３フィールドの movie 化も可能です。各自工夫して下さい。
+Movie は 2フィールドしか対応していない、と書きましたが、複数のフィールドを１つにまとめて別ファイルに保存し、そのファイルを `movie_src` として渡せば、実質２フィールド以上のコンテンツも movie 化が可能です。各自工夫して下さい。
 
 ```shell
 rake conf=src/svl/config.yml src=src/svl/svl-99.txt movie_src=src/svl/svl-99-full.txt en_ja_en:movie
+```
+
+## ディスク容量はどれくらい必要ですか？
+
+結構必要。以下の例で容量を細かく記載するので参考にして下さい。
+
+- 単語数: 1000 (SVL level-7)
+- 音声の時間: 2h10m
+
+生成されるファイルのサイズ. `!` は一時ファイルなので終わったら消してもOK。  
+
+```
+S = sound
+C = cram-app
+M = movie
+! = 通常消してもOK
++---------------------------------------------------------------------------------+
+| Kind of file       Size   Detail       Location                                 |
++---------------------------------------------------------------------------------+
+| [ S] raw           179MB: 94KB x 2000  raw/xxx.wav (TWO(en, ja) file per line)  |
+| [!S] concat        358MB: 358K x 1000  out/concat/svl-en_ja_en--svl07--XXXX.wav |
+| [!S] compile       368MB:              out/compile/svl-en_ja_en--svl-07.wav     |
+| [ S] mp3           128MB:              out/mp3/svl-en_ja_en--svl-07.mp3         |
+| [ C] imgs          3.5GB: 3.5MB x 1000 slideshow/imgs/xxx.png                   |
+| [!M] movie_pics:   2.3GB: 2.3MB x 1000 out/movie_pics:                          |
+| [ M] mp4           672MB:              out/movie                                |
++---------------------------------------------------------------------------------+
+Total-A: Keep   ! files:  S=1GB,   C=3.5GB, M=2.9GB
+Total-B: Delete ! files:  S=307MB, C=3.5GB, M=672MB
 ```
 
 # 謝辞
