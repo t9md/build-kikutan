@@ -26,6 +26,18 @@ def validate_env_and_file(key)
   exit 1
 end
 
+def merge_pseudo_file(_table, rule)
+  table = _table.dup
+  rule.each do |field|
+    if field.is_a?(Numeric)
+      table[field] = "#{DIR[:silent]}/#{field}.wav"
+    elsif (field =~ /(.*)(-[0-9\.]+x)$/)
+      table[field] = table[$1].pathmap('%X') + $2 + '.wav'
+    end
+  end
+  table
+end
+
 validate_env_and_file('conf')
 validate_env_and_file('src')
 
@@ -38,6 +50,7 @@ DEFAULT_CONFIG = {
   'movie' => {},
   'filter' => {},
   'mix' => {},
+  'app' => {},
 }
 CONF = DEFAULT_CONFIG.merge(YAML.load_file(ENV["conf"]))
 
@@ -111,28 +124,34 @@ def build_filelist(source_file, rule_name)
     concat: 1.upto(src_lines.size).map { |n| "#{DIR[:concat]}/#{prefix}--#{'%04d' % n}.wav" },
     raw: [],
     say_args_by_raw: {},
-    silent_by_duration: {},
     movie_concat: "#{DIR[:movie]}/CONCAT_#{prefix}.txt",
     movie: "#{DIR[:movie]}/#{prefix}.mp4",
     movie_pics: [],
+    app_sounds: [],
   }
 
-  required_fields = CONF['concat'][rule_name].uniq
-  required_fields.select { |d| d.is_a?(Numeric) }.each do |duration|
-    filelist[:silent_by_duration][duration] = "#{DIR[:silent]}/#{duration}.wav"
-  end
 
   field_voice = CONF['field'].to_a
-  src_lines.each_with_index do |line, line_num|
+  src_lines.each_with_index do |line, line_index|
     line.chomp!
 
     raw_by_field = {}
     line.split(/\t/).each_with_index do |content, index|
       field, voice = field_voice[index]
       next unless voice
-      if (filelist[:movie_pics][line_num].nil?)
+      if (filelist[:movie_pics][line_index].nil?)
         filelist[:movie_pics].push "#{DIR[:movie_pics]}/#{content}.png"
       end
+
+      if CONF['app'][rule_name]
+        app_root = CONF['app'][rule_name]['app_root']
+        if app_root
+          if (filelist[:app_sounds][line_index].nil?)
+            filelist[:app_sounds].push File.join(app_root, "sounds", "#{content}.wav")
+          end
+        end
+      end
+
       filter = CONF['filter'][field]
       content = Filter.send(filter, content) if filter
       digest = Digest::SHA256.hexdigest(voice + content)
@@ -156,11 +175,11 @@ def define_task(filelist, rule_name)
       filelist[:movie_pics].each do |pic|
         file pic do
           mkdir_p DIR[:movie_pics]
-          app_entry = CONF['movie'][rule_name]['app_entry']
+          app_root = CONF['movie'][rule_name]['app_root']
           script = "scripts/capture_movie_pics.py"
           movie_src = ENV['movie_src'] || ENV['src']
           source_path = File.expand_path(movie_src)
-          sh "python #{script} -e #{app_entry} #{source_path} -d #{DIR[:movie_pics]}", noop: false, verbose: true
+          sh "python #{script} -e #{app_root}/index.html #{source_path} -d #{DIR[:movie_pics]}", noop: false, verbose: true
         end
       end
       task movie_pics: filelist[:movie_pics]
@@ -175,7 +194,7 @@ def define_task(filelist, rule_name)
       end
       task movie_concat: filelist[:movie_concat]
 
-      file filelist[:movie] => filelist[:movie_concat] do |t|
+      file filelist[:movie] => [filelist[:movie_concat], filelist[:mp3]] do |t|
         mkdir_p DIR[:movie]
 
         sound = filelist[:mp3]
@@ -197,6 +216,22 @@ def define_task(filelist, rule_name)
       end
     end
 
+    # App sound. just stupid copy of concat logic
+    #----------------
+    filelist[:app_sounds].each_with_index do |filepath, index|
+      concat_rule = CONF['app'][rule_name]['sound']
+      raw_file_by_field = merge_pseudo_file(filelist[:raw][index], concat_rule)
+      file filepath => raw_file_by_field.values do |t|
+        files = concat_rule.map { |field| raw_file_by_field[field] }
+        sh "sox #{files.join(" ")} #{t.name}"
+      end
+    end
+    desc "app_sounds"
+    task app_sounds: filelist[:app_sounds]
+
+    # Experimental, copy to itunes, it works only when REPLACING existing file with same file name.
+    # Thus, it's not work well at very initial import
+    #----------------
     task itunes: [:album] do
       artist = CONF['album'][rule_name]['artist']
       title = CONF['album'][rule_name]['title']
@@ -291,26 +326,15 @@ def define_task(filelist, rule_name)
 
     # concat
     #----------------
-    filelist[:concat].each_with_index do |concat_file, index|
-      raw_file_by_field = filelist[:raw][index]
-
-      # Inject tempo-ed file as dependency
-      CONF['concat'][rule_name].each do |field|
-        if (field =~ /(.*)(-[0-9\.]+x)$/)
-          raw_file_by_field[field] = raw_file_by_field[$1].pathmap('%X') + $2 + '.wav'
-        end
-      end
-
-      depends = raw_file_by_field.values + filelist[:silent_by_duration].values()
-      file concat_file => depends do |t|
+    filelist[:concat].each_with_index do |filepath, index|
+      concat_rule = CONF['concat'][rule_name]
+      raw_file_by_field = merge_pseudo_file(filelist[:raw][index], concat_rule)
+      file filepath => raw_file_by_field.values do |t|
         mkdir_p DIR[:concat], verbose: false
-        files = CONF['concat'][rule_name].map { |field|
-          raw_file_by_field[field] || filelist[:silent_by_duration][field]
-        }
+        files = concat_rule.map { |field| raw_file_by_field[field] }
         sh "sox #{files.join(" ")} #{t.name}"
       end
     end
-
     desc "concat"
     task concat: filelist[:concat]
 

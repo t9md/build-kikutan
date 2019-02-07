@@ -2,6 +2,7 @@
 - [build-kikutan](#build-kikutan)
 - [これは何?](#これは何)
   - [出来ること](#出来ること)
+    - [cram-vocabulary との連携](#cram-vocabulary-との連携)
   - [対象環境](#対象環境)
   - [対象者: どれくらいの技術知識、スキルが要るか？](#対象者-どれくらいの技術知識スキルが要るか)
 - [セットアップ:事前準備](#セットアップ事前準備)
@@ -29,6 +30,7 @@
   - [Movie も生成できる？](#movie-も生成できる)
   - [Movie はどうやったら生成できる？](#movie-はどうやったら生成できる)
   - [Movie 用と音声用で、src ファイルが若干ちがうのですが。。](#movie-用と音声用でsrc-ファイルが若干ちがうのですが)
+  - [cram-vocabulary 用の音声インストールの方法は？](#cram-vocabulary-用の音声インストールの方法は)
   - [ディスク容量はどれくらい必要ですか？](#ディスク容量はどれくらい必要ですか)
 - [謝辞](#謝辞)
 
@@ -61,6 +63,12 @@ iPhone 等で聴くことが出来るので、ジョギングや、家事をし�
 - テキストから音声合成. Google の [CLOUD TEXT-TO-SPEECH](https://cloud.google.com/text-to-speech/) を使用。
 - 音声を決めたルールに従って結合. "英-日" や "日-英". 結合時の無音部分も指定可能 `rule: [en, 1.0, ja, 1.0]` みたいに。
 - 一行ごとに生成された音声を一つの音声にまとめて、曲名、アルバム名、ジャケット、アーティスト名、歌詞に単語リストを設定.
+
+
+### [cram-vocabulary](https://github.com/t9md/cram-vocabulary) との連携
+
+- 単語学習動画生成: cram-vocabulary のHTMLページをキャプチャし、動画化する。
+- cram-volabulary用の音声生成: build-kikutan が音声を生成し、cram-vocabulary の sounds/ 配下にインストール
 
 ## 対象環境
 
@@ -520,7 +528,7 @@ Google Cloud のコンソールから使用量と課金状況は確認できる�
 
 [t9md/cram-vocabulary](https://github.com/t9md/cram-vocabulary) との組み合わせで行います。  
 まずは、[t9md/cram-vocabulary](https://github.com/t9md/cram-vocabulary) をセットアップし、音声化した同じ単語リストを、このアプリ上で学べるようにして下さい。  
-次に、`sample/config.yml` の movie 設定を参考に、app_entry を指定した後、`rule_name:movie` タスクを実行します。`out/movie/` 配下に mp4 が生成されます。  
+次に、`sample/config.yml` の movie 設定を参考に、app_root を指定した後、`rule_name:movie` タスクを実行します。`out/movie/` 配下に mp4 が生成されます。  
 
 ```shell
 rake conf=src/svl/config.yml src=src/svl/svl-99.txt en_ja_en:movie
@@ -536,6 +544,23 @@ Movie は 2フィールドしか対応していない、と書きましたが、
 
 ```shell
 rake conf=src/svl/config.yml src=src/svl/svl-99.txt movie_src=src/svl/svl-99-full.txt en_ja_en:movie
+```
+
+## cram-vocabulary 用の音声インストールの方法は？
+
+- `sample/config.yml` 以下の項目を設定してから、、、
+
+```yml
+# app:
+#   en_ja_en:
+#     app_root: /Users/t9md/github/cram-vocabulary/slideshow # 必須: cram-vocabulary の root
+#     sound: [en] # concat ルールと同様の記法が使える。app_root/sounds/ 配下にインストールされる
+```
+
+`rule_name:app_sounds` タスクを実行すれば、app_root/sounds 配下 に音声が インストールされます。
+
+```shell
+rake conf=src/svl/config.yml src=src/svl/svl-07.txt en_ja_en:app_sounds
 ```
 
 ## ディスク容量はどれくらい必要ですか？
