@@ -163,6 +163,7 @@ def define_task(filelist, rule_name)
           sh "python #{script} -e #{app_entry} #{source_path} -d #{DIR[:movie_pics]}", noop: false, verbose: true
         end
       end
+      task movie_pics: filelist[:movie_pics]
 
       file filelist[:movie_concat] => filelist[:movie_pics] + filelist[:concat] do |t|
         concat_list = []
@@ -172,6 +173,7 @@ def define_task(filelist, rule_name)
         end
         File.write(filelist[:movie_concat], concat_list.join("\n") + "\n")
       end
+      task movie_concat: filelist[:movie_concat]
 
       file filelist[:movie] => filelist[:movie_concat] do |t|
         mkdir_p DIR[:movie]

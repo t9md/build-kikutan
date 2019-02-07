@@ -66,6 +66,13 @@ def main():
         driver.execute_script("app.defaultVisible = { word: true, definition: true, caption: true, image: true };")
         driver.execute_script("app.refresh();")
         for idx, word in enumerate(get_words_from_file(file)):
+            try:
+                word_actual = driver.find_element_by_id('word').text
+                assert word == word_actual
+            except Exception as e:
+                print word, word_actual
+                raise
+
             save_snapshot(driver, word, idx)
             driver.execute_script("app.next();")
 
