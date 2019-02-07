@@ -63,7 +63,7 @@ def main():
     body = driver.find_element_by_id("fileinput")
     for file in args:
         fileinput_element.send_keys(os.path.abspath(file))
-        driver.execute_script("app.defaultVisible = { word: true, definition: true, caption: true, image: true };")
+        driver.execute_script("app.screenCaptureMode();")
         driver.execute_script("app.refresh();")
         for idx, word in enumerate(get_words_from_file(file)):
             try:
