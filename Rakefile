@@ -229,6 +229,16 @@ def define_task(filelist, rule_name)
     desc "app_sounds"
     task app_sounds: filelist[:app_sounds]
 
+    namespace :app_sounds do
+      desc "clean app_sounds to reinstall"
+      task :clean do
+        rm filelist[:app_sounds]
+      end
+    end
+
+    # desc "app_sounds"
+    # task app_sounds: filelist[:app_sounds]
+
     # Experimental, copy to itunes, it works only when REPLACING existing file with same file name.
     # Thus, it's not work well at very initial import
     #----------------
