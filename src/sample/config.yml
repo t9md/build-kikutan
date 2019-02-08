@@ -30,5 +30,7 @@ concat: # 各行の各フィールドを結合するルールを指定
 #     window_size: "1280x720" # オプション デフォルト=1280x720
 # app:
 #   en_ja_en:
-#     app_root: /Users/t9md/github/cram-vocabulary/slideshow # 必須: cram-vocabulary の root
-#     sound: [en] # concat ルールと同様の記法が使える。app_root/sounds/ 配下にインストールされる
+#     app_root: /Users/t9md/github/cram-vocabulary/slideshow
+#     sounds:
+#       - [en] # 1フィールド目のサウンド concat ルールと同様の記法が使える。app_root/sounds/ 配下にインストールされる
+#       - [ja-1.1x]  # 2フィールド目のサウンド(オプション)

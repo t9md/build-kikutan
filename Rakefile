@@ -143,11 +143,14 @@ def build_filelist(source_file, rule_name)
         filelist[:movie_pics].push "#{DIR[:movie_pics]}/#{content}.png"
       end
 
-      if CONF['app'][rule_name]
-        app_root = CONF['app'][rule_name]['app_root']
+      app_config = CONF['app'][rule_name]
+      if app_config
+        app_root = app_config['app_root']
         if app_root
           if (filelist[:app_sounds][line_index].nil?)
-            filelist[:app_sounds].push File.join(app_root, "sounds", "#{content}.wav")
+            filelist[:app_sounds].push app_config['sounds'].size.times.map { |n|
+              File.join(app_root, "sounds", "#{content}-#{n + 1}.wav")
+            }
           end
         end
       end
@@ -218,26 +221,42 @@ def define_task(filelist, rule_name)
 
     # App sound. just stupid copy of concat logic
     #----------------
-    filelist[:app_sounds].each_with_index do |filepath, index|
-      concat_rule = CONF['app'][rule_name]['sound']
-      raw_file_by_field = merge_pseudo_file(filelist[:raw][index], concat_rule)
-      file filepath => raw_file_by_field.values do |t|
-        files = concat_rule.map { |field| raw_file_by_field[field] }
-        sh "sox #{files.join(" ")} #{t.name}"
+    filelist[:app_sounds].each_with_index do |files, index|
+      concat_rules = CONF['app'][rule_name]['sounds']
+
+      files.zip(concat_rules).each do |filepath, concat_rule|
+        raw_file_by_field = merge_pseudo_file(filelist[:raw][index], concat_rule)
+        file filepath => raw_file_by_field.values do |t|
+          raw_files = concat_rule.map { |field| raw_file_by_field[field] }
+          sh "sox #{raw_files.join(" ")} #{t.name}"
+        end
       end
     end
+
     desc "app_sounds"
-    task app_sounds: filelist[:app_sounds]
+    task app_sounds: filelist[:app_sounds].flatten do
+      app_root = CONF['app'][rule_name]['app_root']
+      # /Users/t9md/github/cram-vocabulary/slideshow
+      puts <<~EOS
+
+      You have #{CONF['app'][rule_name]['sounds'].size} sound files on each line.
+      If you want to play these sounds in `cram-vocabulary` app, put following configuration in "#{app_root}/config.js".
+
+      // ↓ これを '#{app_root}/config.js"' に 設定して！
+
+      Config.playAudio = true
+      Config.playAudioFields = [1, 2]
+
+      EOS
+    end
+    # concat_rules
 
     namespace :app_sounds do
       desc "clean app_sounds to reinstall"
       task :clean do
-        rm filelist[:app_sounds]
+        rm filelist[:app_sounds].flatten
       end
     end
-
-    # desc "app_sounds"
-    # task app_sounds: filelist[:app_sounds]
 
     # Experimental, copy to itunes, it works only when REPLACING existing file with same file name.
     # Thus, it's not work well at very initial import
