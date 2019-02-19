@@ -7,6 +7,17 @@ require "google/cloud/text_to_speech"
 # Quilck Reference for Rakefile:
 # https://gist.github.com/noonat/1649543
 
+# borrowed from shellwords
+# http://ruby-doc.org/stdlib-2.0.0/libdoc/shellwords/rdoc/Shellwords.html#method-c-escape
+def shellescape(str)
+  str = str.to_s
+  return "''" if str.empty?
+  str = str.dup
+  str.gsub!(/([^A-Za-z0-9_\-.,:\/@\n])/, "\\\\\\1")
+  str.gsub!(/\n/, "'\n'")
+  return str
+end
+
 def check_duration(file)
   duration = `soxi #{file} | grep Duration | awk '{ print $3 }'`.chomp
   duration
@@ -228,7 +239,7 @@ def define_task(filelist, rule_name)
         raw_file_by_field = merge_pseudo_file(filelist[:raw][index], concat_rule)
         file filepath => raw_file_by_field.values do |t|
           raw_files = concat_rule.map { |field| raw_file_by_field[field] }
-          sh "sox #{raw_files.join(" ")} #{t.name}"
+          sh "sox #{raw_files.join(" ")} #{shellescape(t.name)}"
         end
       end
     end
