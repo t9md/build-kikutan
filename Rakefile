@@ -199,6 +199,7 @@ def define_task(filelist, rule_name)
       task movie_pics: filelist[:movie_pics]
 
       file filelist[:movie_concat] => filelist[:movie_pics] + filelist[:concat] do |t|
+        mkdir_p DIR[:movie]
         concat_list = []
         filelist[:movie_pics].zip(filelist[:concat]).each do |word, sound|
           concat_list.push "file #{word}"
