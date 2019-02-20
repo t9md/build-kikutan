@@ -2,6 +2,7 @@
 # dir_raw: ./raw # raw だけは別ディレクトリに個別に設定できる。デフォルトは "./raw"
 project: sample # プロジェクト名
 field: # タブ区切りのフィールドに名前をつけ、使用する音声名を指定
+  # 使えるVoice 一覧はここを見る https://cloud.google.com/text-to-speech/docs/voices
   en: en-US-Wavenet-F # １つ目のフィールドは英語の音声
   ja: ja-JP-Wavenet-A # ２つ目は日本語として読み上げ
 concat: # 各行の各フィールドを結合するルールを指定
