@@ -1,21 +1,20 @@
 require 'digest/sha2'
 require "yaml"
 require 'pp'
+require "base64"
 
 require "google/cloud/text_to_speech"
 
 # Quilck Reference for Rakefile:
 # https://gist.github.com/noonat/1649543
 
-# borrowed from shellwords
-# http://ruby-doc.org/stdlib-2.0.0/libdoc/shellwords/rdoc/Shellwords.html#method-c-escape
-def shellescape(str)
-  str = str.to_s
-  return "''" if str.empty?
-  str = str.dup
-  str.gsub!(/([^A-Za-z0-9_\-.,:\/@\n])/, "\\\\\\1")
-  str.gsub!(/\n/, "'\n'")
-  return str
+def get_filename(text)
+  # When word contain's non-alphanumeric char, it base64 encode to safely be able to save to disk.
+  if text =~ /\W/
+    Base64.encode64(text).chomp
+  else
+    text
+  end
 end
 
 def check_duration(file)
@@ -150,8 +149,11 @@ def build_filelist(source_file, rule_name)
     line.split(/\t/).each_with_index do |content, index|
       field, voice = field_voice[index]
       next unless voice
+      filename_safe_content = get_filename(content)
+      # p [filename_safe_content, content]
+
       if (filelist[:movie_pics][line_index].nil?)
-        filelist[:movie_pics].push "#{DIR[:movie_pics]}/#{content}.png"
+        filelist[:movie_pics].push "#{DIR[:movie_pics]}/#{filename_safe_content}.png"
       end
 
       app_config = CONF['app'][rule_name]
@@ -160,7 +162,7 @@ def build_filelist(source_file, rule_name)
         if app_root
           if (filelist[:app_sounds][line_index].nil?)
             filelist[:app_sounds].push app_config['sounds'].size.times.map { |n|
-              File.join(app_root, "sounds", "#{content}-#{n + 1}.wav")
+              File.join(app_root, "sounds", "#{filename_safe_content}-#{n + 1}.wav")
             }
           end
         end
@@ -202,7 +204,7 @@ def define_task(filelist, rule_name)
         mkdir_p DIR[:movie]
         concat_list = []
         filelist[:movie_pics].zip(filelist[:concat]).each do |word, sound|
-          concat_list.push "file #{shellescape(word)}"
+          concat_list.push "file #{word}"
           concat_list.push "duration #{check_duration(sound)}"
         end
         File.write(filelist[:movie_concat], concat_list.join("\n") + "\n")
@@ -233,6 +235,7 @@ def define_task(filelist, rule_name)
 
     # App sound. just stupid copy of concat logic
     #----------------
+    p filelist[:app_sounds]
     filelist[:app_sounds].each_with_index do |files, index|
       concat_rules = CONF['app'][rule_name]['sounds']
 
@@ -240,7 +243,7 @@ def define_task(filelist, rule_name)
         raw_file_by_field = merge_pseudo_file(filelist[:raw][index], concat_rule)
         file filepath => raw_file_by_field.values do |t|
           raw_files = concat_rule.map { |field| raw_file_by_field[field] }
-          sh "sox #{raw_files.join(" ")} #{shellescape(t.name)}"
+          sh "sox #{raw_files.join(" ")} #{t.name}"
         end
       end
     end
