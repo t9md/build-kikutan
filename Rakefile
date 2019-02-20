@@ -202,7 +202,7 @@ def define_task(filelist, rule_name)
         mkdir_p DIR[:movie]
         concat_list = []
         filelist[:movie_pics].zip(filelist[:concat]).each do |word, sound|
-          concat_list.push "file #{word}"
+          concat_list.push "file #{shellescape(word)}"
           concat_list.push "duration #{check_duration(sound)}"
         end
         File.write(filelist[:movie_concat], concat_list.join("\n") + "\n")
