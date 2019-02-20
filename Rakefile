@@ -348,11 +348,15 @@ def define_task(filelist, rule_name)
     #----------------
     file filelist[:compile] => filelist[:concat] do |t|
       mkdir_p DIR[:compile], verbose: false
-      files = filelist[:concat]
+      files = filelist[:concat].map {|e| File.basename(e) }
       if CONF['compile'][rule_name] === "shuffle"
         files = files.shuffle
       end
-      sh "sox --clobber #{files.join(" ")} #{t.name} pad 0 7" # pad with 7s silence at end.
+      # To avoid shell args buffer overflow because of too long arg string.
+      # We here intentionally relativise files by cd-ing to concat dir.
+      Dir.chdir(DIR[:concat]) do
+        sh "sox --clobber #{files.join(" ")} #{t.name} pad 0 7" # pad with 7s silence at end.
+      end
     end
 
     desc "compile"
