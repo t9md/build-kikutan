@@ -235,7 +235,6 @@ def define_task(filelist, rule_name)
 
     # App sound. just stupid copy of concat logic
     #----------------
-    p filelist[:app_sounds]
     filelist[:app_sounds].each_with_index do |files, index|
       concat_rules = CONF['app'][rule_name]['sounds']
 
