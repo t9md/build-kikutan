@@ -566,7 +566,7 @@ https://cloud.google.com/text-to-speech/docs/ssml
 - ３つ目のフィールドをSSML化
 
 ```
-a/n	not, without	<speak><s>abyss<break strength="medium"/>without bottom</s><break strength="strong"/><s>achromatic<break strength="medium"/>without color</s><break strength="strong"/><s>anhydrous<break strength="medium"/>without water</s></speak>
+a/n[__TAB__]not, without[__TAB__]<speak><s>abyss<break strength="medium"/>without bottom</s><break strength="strong"/><s>achromatic<break strength="medium"/>without color</s><break strength="strong"/><s>anhydrous<break strength="medium"/>without water</s></speak>
 ```
 
 このような形に持っていくのにSSML を手打ちするのは辛いです。テキストには以下の規則が有りました。
