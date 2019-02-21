@@ -29,6 +29,7 @@
   - [音声ファイルのサイズが大きいんですが。。もうちょっと小さくなりませんか？](#音声ファイルのサイズが大きいんですがもうちょっと小さくなりませんか)
   - [Movie も生成できる？](#movie-も生成できる)
   - [Movie はどうやったら生成できる？](#movie-はどうやったら生成できる)
+  - [SSML はサポートしてますか？](#ssml-はサポートしてますか)
   - [Movie 用と音声用で、src ファイルが若干ちがうのですが。。](#movie-用と音声用でsrc-ファイルが若干ちがうのですが)
   - [cram-vocabulary 用の音声インストールの方法は？](#cram-vocabulary-用の音声インストールの方法は)
   - [ディスク容量はどれくらい必要ですか？](#ディスク容量はどれくらい必要ですか)
@@ -533,6 +534,76 @@ Google Cloud のコンソールから使用量と課金状況は確認できる�
 ```shell
 rake conf=src/svl/config.yml src=src/svl/svl-99.txt en_ja_en:movie
 ```
+
+## SSML はサポートしてますか？
+
+しています。フィールドのコンテンツによって自動判別します。  
+フィールドが `<speak>` で始まっていれば SSML と見做します。  
+SSML については以下のURL を参考にして下さい。  
+
+https://cloud.google.com/text-to-speech/docs/ssml
+
+少し例を示します。SSMLを手で入力するのは骨が折れるでしょう。  
+決まったルールがあるのなら、置換するのが楽です。  
+私が実際に使ったケースは以下のものです。  
+以下のようなテキストがありました。３つめのフィールドを読み上げる時、一切間が無く、一気に読み上げられてしまうのが不満でした。  
+そこで、これをSSMLで適度な間を持って読み上げるようにしました。  
+
+- 元のテキスト: (`[__TAB__]` は実際はタブ文字(`\t`))
+
+```
+'a/n[__TAB__]not, without[__TAB__]abyss - without bottom; achromatic - without color; anhydrous - without water'
+```
+
+意味的には以下のようになるように読み上げたいのです。
+
+- abyss: without bottom
+- achromatic: without color
+- anhydrous: without water
+
+これをSSML で書いたものは以下です。
+
+- ３つ目のフィールドをSSML化
+
+```
+a/n	not, without	<speak><s>abyss<break strength="medium"/>without bottom</s><break strength="strong"/><s>achromatic<break strength="medium"/>without color</s><break strength="strong"/><s>anhydrous<break strength="medium"/>without water</s></speak>
+```
+
+このような形に持っていくのにSSML を手打ちするのは辛いです。テキストには以下の規則が有りました。
+
+`-`: が小さな区切り(見出し語と説明の区切り) → `<break strength="medium"/>`
+`;`: が大きな区切り(見出し語自体の区切り) → `<break strength="strong"/>`
+
+上記を実現するために書いた使い捨てスクリプトは以下です。
+
+- convert-to-ssml.rb
+
+```ruby
+STRONG = '<break strength="strong"/>'
+MEDIUM = '<break strength="medium"/>'
+
+def ssmlify(text)
+  sentences = text.split(/\s*?;\s*/) # ; を文の区切りと見做して分割。
+  sentences = sentences.map do |s|
+    '<s>' + s.gsub(/\s+-\s+/, MEDIUM) + '</s>' # - を MEDIUM に置換
+  end
+  "<speak>#{sentences.join(STRONG)}</speak>" # 文を STRONG で連結語、`<speak>` タグで囲む
+end
+
+File.open(ARGV[0]).readlines.each_with_index do |line|
+  fields = line.chomp!.split(/\t/) # タブで分割
+  fields[2] = ssmlify(fields[2]) # 最後のフィールドをSSML化
+  puts fields.join("\t") # またタブで結合して出力
+end
+```
+
+実行
+
+```
+ruby convert-to-ssml.rb sample.txt > sample-ssml.txt
+```
+
+
 
 ## Movie 用と音声用で、src ファイルが若干ちがうのですが。。
 
