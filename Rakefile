@@ -86,7 +86,11 @@ end
 
 def say(voice, content)
   options = { name: voice, language_code: voice[0..4] }
-  synthesis_input = { text: content }
+  if content.start_with?("<speak>")
+    synthesis_input = { ssml: content }
+  else
+    synthesis_input = { text: content }
+  end
   audio_config = { audio_encoding: "LINEAR16" }
   client = Google::Cloud::TextToSpeech.new
   result = client.synthesize_speech synthesis_input, options, audio_config
@@ -268,7 +272,7 @@ def define_task(filelist, rule_name)
     namespace :app_sounds do
       desc "clean app_sounds to reinstall"
       task :clean do
-        rm filelist[:app_sounds].flatten
+        rm_f filelist[:app_sounds].flatten, verbose: true
       end
     end
 
