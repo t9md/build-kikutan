@@ -574,6 +574,10 @@ a/n[__TAB__]not, without[__TAB__]<speak><s>abyss<break strength="medium"/>withou
 `-`: が小さな区切り(見出し語と説明の区切り) → `<break strength="medium"/>`
 `;`: が大きな区切り(見出し語自体の区切り) → `<break strength="strong"/>`
 
+ただし、`;` は単に置換するより、`;`を文の区切りと見做した方が、区切りのイントネーションが良い結果がでたので、`;` を文の区切りと見做すようにしました。  
+具体的には文は `<s>文</s>` の様に `<s>` で囲みます。
+
+
 上記を実現するために書いた使い捨てスクリプトは以下です。
 
 - convert-to-ssml.rb
@@ -587,7 +591,7 @@ def ssmlify(text)
   sentences = sentences.map do |s|
     '<s>' + s.gsub(/\s+-\s+/, MEDIUM) + '</s>' # - を MEDIUM に置換
   end
-  "<speak>#{sentences.join(STRONG)}</speak>" # 文を STRONG で連結語、`<speak>` タグで囲む
+  "<speak>#{sentences.join(STRONG)}</speak>" # 文を STRONG で連結、`<speak>` タグで囲む
 end
 
 File.open(ARGV[0]).readlines.each_with_index do |line|
