@@ -594,7 +594,7 @@ def ssmlify(text)
   "<speak>#{sentences.join(STRONG)}</speak>" # 文を STRONG で連結、`<speak>` タグで囲む
 end
 
-File.open(ARGV[0]).readlines.each_with_index do |line|
+File.open(ARGV[0]).readlines.each do |line|
   fields = line.chomp!.split(/\t/) # タブで分割
   fields[2] = ssmlify(fields[2]) # 最後のフィールドをSSML化
   puts fields.join("\t") # またタブで結合して出力
