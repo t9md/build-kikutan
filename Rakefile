@@ -1,7 +1,6 @@
 require 'digest/sha2'
 require "yaml"
 require 'pp'
-require "base64"
 
 require "google/cloud/text_to_speech"
 
@@ -9,9 +8,8 @@ require "google/cloud/text_to_speech"
 # https://gist.github.com/noonat/1649543
 
 def get_filename(text)
-  # When word contain's char inappropriate for filename it base64 encode to safely be able to save to disk.
   if text =~ /[^\w\.\-_]/
-    Base64.encode64(text).chomp
+    Digest::SHA256.hexdigest(text)
   else
     text
   end
