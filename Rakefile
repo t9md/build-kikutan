@@ -307,7 +307,7 @@ def define_task(filelist, rule_name)
         options << "-A #{title}" if title
         jacket = album_config['jacket']
         options << "--add-image #{File.absolute_path(jacket, CONF_DIR)}:FRONT_COVER" if jacket
-        lyrics = filelist[:source]
+        lyrics = ENV['lyric'] || ENV['src']
         unless options.empty?
           sh "eyeD3 -Q #{options.join(' ')} --add-lyrics #{lyrics} #{t.source}"
         end
