@@ -202,6 +202,13 @@ def define_task(filelist, rule_name)
       end
       task movie_pics: filelist[:movie_pics]
 
+      namespace :movie_pics do
+        desc "clean movie_pics"
+        task :clean do
+          rm_f filelist[:movie_pics], verbose: true
+        end
+      end
+
       file filelist[:movie_concat] => filelist[:movie_pics] + filelist[:concat] do |t|
         mkdir_p DIR[:movie]
         concat_list = []
