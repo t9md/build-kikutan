@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 
 import sys
-from pprint import pprint
 
 # START: Frawned approach to change default encoding
 # But I intentionally take this approach since it's easy and believe it non-problematic in this limited program.
@@ -11,6 +10,7 @@ reload(sys)
 sys.setdefaultencoding('UTF8')
 # END: Frawned approach to change default encoding
 
+from pprint import pprint
 import os
 from selenium import webdriver
 from selenium.webdriver.common.action_chains import ActionChains
@@ -87,7 +87,6 @@ def main():
             try:
                 word_actual = driver.find_element_by_id('word').text
                 assert len(word_actual) > 0
-                # assert word == word_actual
             except Exception as e:
                 pprint([word, word_actual])
                 raise
