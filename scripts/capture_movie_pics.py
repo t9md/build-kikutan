@@ -1,6 +1,16 @@
 # -*- coding: utf-8 -*-
 
 import sys
+from pprint import pprint
+
+# START: Frawned approach to change default encoding
+# But I intentionally take this approach since it's easy and believe it non-problematic in this limited program.
+# See discussion detail here.
+# https://stackoverflow.com/questions/3828723/why-should-we-not-use-sys-setdefaultencodingutf-8-in-a-py-script
+reload(sys)
+sys.setdefaultencoding('UTF8')
+# END: Frawned approach to change default encoding
+
 import os
 from selenium import webdriver
 from selenium.webdriver.common.action_chains import ActionChains
@@ -76,13 +86,14 @@ def main():
         for idx, word in enumerate(get_words_from_file(file)):
             try:
                 word_actual = driver.find_element_by_id('word').text
-                assert word == word_actual
+                assert len(word_actual) > 0
+                # assert word == word_actual
             except Exception as e:
-                print word, word_actual
+                pprint([word, word_actual])
                 raise
 
             save_snapshot(driver, word, idx)
-            driver.execute_script("app.next();")
+            driver.execute_script("app.setCard('next');")
 
     driver.quit()
 
