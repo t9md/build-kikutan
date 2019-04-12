@@ -409,6 +409,12 @@ def define_task(filelist, rule_name)
     task raw: raw_files
 
     namespace :raw do
+      desc "clean row"
+      task :clean do
+        raw_files = filelist[:raw].map {|h| h.values}.flatten
+        rm_f raw_files, verbose: true
+      end
+
       desc "play"
       task :play, [:line, :field] => raw_files do |t, args|
         line = args[:line].to_i
