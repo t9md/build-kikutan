@@ -6,8 +6,8 @@ import sys
 # But I intentionally take this approach since it's easy and believe it non-problematic in this limited program.
 # See discussion detail here.
 # https://stackoverflow.com/questions/3828723/why-should-we-not-use-sys-setdefaultencodingutf-8-in-a-py-script
-reload(sys)
-sys.setdefaultencoding('UTF8')
+# reload(sys)
+# sys.setdefaultencoding('UTF8')
 # END: Frawned approach to change default encoding
 
 from pprint import pprint
@@ -40,11 +40,11 @@ def save_snapshot(driver, word, idx):
     idx = "%03d" % (idx + 1)
 
     if os.path.isfile(fname):
-        print "  [SKIP] %s: %s exists!" % (idx, fname)
+        print("  [SKIP] %s: %s exists!" % (idx, fname))
         return
 
     driver.save_screenshot(fname)
-    print "  [SAVE] %s: %s" % (idx, fname)
+    print("  [SAVE] %s: %s" % (idx, fname))
 
 def get_words_from_file(fname):
     with open(fname) as f:
@@ -71,9 +71,9 @@ def main():
 
     (screen_width, screen_height) = Options.window.split("x")
     driver.set_window_size(screen_width, screen_height)
-    print 'window size', driver.get_window_size()
-    print 'output dir', Options.dir
-    print 'app entry', Options.entry
+    print('window size', driver.get_window_size())
+    print('output dir', Options.dir)
+    print('app entry', Options.entry)
 
     mkdir_p(Options.dir)
 

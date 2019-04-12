@@ -62,9 +62,9 @@ DEFAULT_CONFIG = {
 }
 CONF = DEFAULT_CONFIG.merge(YAML.load_file(ENV["conf"]))
 
-OUT = File.absolute_path(CONF['dir_out'], CONF_DIR)
+OUT = File.expand_path(CONF['dir_out'], CONF_DIR)
 DIR = {
-  raw: File.absolute_path(CONF['dir_raw'], CONF_DIR),
+  raw: File.expand_path(CONF['dir_raw'], CONF_DIR),
   silent: "#{OUT}/silent",
   concat: "#{OUT}/concat",
   compile: "#{OUT}/compile",
@@ -311,7 +311,7 @@ def define_task(filelist, rule_name)
         title = album_config['title']
         options << "-A #{title}" if title
         jacket = album_config['jacket']
-        options << "--add-image #{File.absolute_path(jacket, CONF_DIR)}:FRONT_COVER" if jacket
+        options << "--add-image #{File.expand_path(jacket, CONF_DIR)}:FRONT_COVER" if jacket
         lyrics = ENV['lyric'] || ENV['src']
         unless options.empty?
           sh "eyeD3 -Q #{options.join(' ')} --add-lyrics #{lyrics} #{t.source}"
@@ -335,7 +335,7 @@ def define_task(filelist, rule_name)
 
       mix = ENV['mix']
       if not mix and CONF['mix'][rule_name]
-        mix = File.absolute_path(CONF['mix'][rule_name], CONF_DIR)
+        mix = File.expand_path(CONF['mix'][rule_name], CONF_DIR)
       end
 
       if mix
